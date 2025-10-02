@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
+import { Image } from 'expo-image';
 
 import { Colors } from '@/constants/theme';
 import { formatDateLabel, formatDistance, formatDuration } from '@/lib/format';
@@ -56,6 +57,13 @@ export default function ActivityScreen() {
                         {formatDuration(entry.time)} · {formatDistance(entry.distance)}
                       </Text>
                     </View>
+                    {entry.snapshotUri ? (
+                      <Image
+                        source={{ uri: entry.snapshotUri }}
+                        style={styles.entryImage}
+                        contentFit="cover"
+                      />
+                    ) : null}
                     {entry.memo ? <Text style={styles.entryMemo}>{entry.memo}</Text> : null}
                   </View>
                 ))}
@@ -117,6 +125,11 @@ const styles = StyleSheet.create({
   entryRowLast: {
     borderBottomWidth: 0,
     paddingBottom: 0,
+  },
+  entryImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
   },
   entryMeta: {
     flexDirection: 'row',

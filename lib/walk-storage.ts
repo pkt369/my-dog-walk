@@ -7,6 +7,7 @@ export interface WalkEntry {
   time: number; // seconds
   distance: number; // kilometers
   path: CoordinateTuple[];
+  snapshotUri?: string;
   memo?: string;
   endedAt: string; // ISO timestamp
 }

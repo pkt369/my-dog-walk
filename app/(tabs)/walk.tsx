@@ -1,7 +1,8 @@
+import { Image } from 'expo-image';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
 import { formatDistance, formatDuration } from '@/lib/format';
@@ -32,7 +33,7 @@ export default function WalkTab() {
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
         <Text style={styles.heroTitle}>Ready to walk?</Text>
-        <Text style={styles.heroSubtitle}>Nike Run Club 감성으로 가볍게 시작해요.</Text>
+        <Text style={styles.heroSubtitle}>산책을 기록해봐요.</Text>
       </View>
 
       <Pressable style={styles.startButton} onPress={() => router.push('/walk-session')}>
@@ -45,6 +46,13 @@ export default function WalkTab() {
           <Text style={styles.recentMetrics}>
             {formatDuration(recentWalk.time)} · {formatDistance(recentWalk.distance)}
           </Text>
+          {recentWalk.snapshotUri ? (
+            <Image
+              source={{ uri: recentWalk.snapshotUri }}
+              style={styles.recentSnapshot}
+              contentFit="cover"
+            />
+          ) : null}
           {recentWalk.memo ? <Text style={styles.recentMemo}>{recentWalk.memo}</Text> : null}
         </View>
       ) : (
@@ -103,6 +111,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     gap: 8,
+  },
+  recentSnapshot: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    marginTop: 8,
   },
   recentTitle: {
     fontSize: 16,

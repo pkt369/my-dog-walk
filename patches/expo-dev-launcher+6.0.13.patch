@@ -1,0 +1,29 @@
+diff --git a/node_modules/expo-dev-launcher/ios/ReactDelegateHandler/ExpoDevLauncherReactDelegateHandler.swift b/node_modules/expo-dev-launcher/ios/ReactDelegateHandler/ExpoDevLauncherReactDelegateHandler.swift
+index 306aad6..d50a7df 100644
+--- a/node_modules/expo-dev-launcher/ios/ReactDelegateHandler/ExpoDevLauncherReactDelegateHandler.swift
++++ b/node_modules/expo-dev-launcher/ios/ReactDelegateHandler/ExpoDevLauncherReactDelegateHandler.swift
+@@ -55,7 +55,7 @@ public class ExpoDevLauncherReactDelegateHandler: ExpoReactDelegateHandler, EXDe
+     ((UIApplication.shared.delegate as? NSObject)?.value(forKey: "_expoAppDelegate") as? (any ReactNativeFactoryProvider)) : nil)
+     let reactDelegate = self.reactDelegate
+ 
+-    guard let reactNativeFactory = appDelegate?.factory as? RCTReactNativeFactory ?? reactDelegate?.reactNativeFactory as? RCTReactNativeFactory else {
++    guard let reactNativeFactory = appDelegate?.factory as? RCTReactNativeFactory else {
+       fatalError("`UIApplication.shared.delegate` must be an `ExpoAppDelegate` or `EXAppDelegateWrapper`")
+     }
+     self.reactNativeFactory = reactNativeFactory
+@@ -82,15 +82,6 @@ public class ExpoDevLauncherReactDelegateHandler: ExpoReactDelegateHandler, EXDe
+           launchOptions: launchOptions
+         )
+       }
+-      if let factory = reactDelegate?.reactNativeFactory {
+-        return factory.recreateRootView(
+-          withBundleURL: withBundleURL,
+-          moduleName: moduleName,
+-          initialProps: initialProps,
+-          launchOptions: launchOptions
+-        )
+-      }
+-
+       fatalError("`UIApplication.shared.delegate` must be an `ExpoAppDelegate` or `EXAppDelegateWrapper`")
+     }
+ 

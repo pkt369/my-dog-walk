@@ -1,7 +1,19 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import * as Sharing from 'expo-sharing';
 
 import { Colors } from '@/constants/theme';
 import { formatDistance, formatDuration } from '@/lib/format';
@@ -12,6 +24,7 @@ interface SummaryPayload {
   duration: number;
   distance: number;
   path: CoordinateTuple[];
+  snapshotUri?: string;
 }
 
 export default function SummaryScreen() {
@@ -19,6 +32,7 @@ export default function SummaryScreen() {
   const params = useLocalSearchParams<Record<string, string>>();
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const payload = useMemo<SummaryPayload | null>(() => {
     const raw = params.payload;
@@ -45,6 +59,7 @@ export default function SummaryScreen() {
       time: payload.duration,
       distance: payload.distance,
       path: payload.path,
+      snapshotUri: payload.snapshotUri,
       memo: memo.trim() ? memo.trim() : undefined,
       endedAt: endedAt.toISOString(),
     });
@@ -58,9 +73,34 @@ export default function SummaryScreen() {
     ]);
   };
 
+  const handleShare = async () => {
+    if (!payload?.snapshotUri) {
+      Alert.alert('이미지가 없어요', '지도 스냅샷을 찾을 수 없어 공유할 수 없어요.');
+      return;
+    }
+
+    try {
+      const available = await Sharing.isAvailableAsync();
+      if (!available) {
+        Alert.alert('공유를 지원하지 않아요', '이 기기에서는 공유 기능을 사용할 수 없어요.');
+        return;
+      }
+      setIsSharing(true);
+      await Sharing.shareAsync(payload.snapshotUri, {
+        mimeType: 'image/png',
+        dialogTitle: '산책 공유하기',
+      });
+    } catch (error) {
+      console.warn('Failed to share walk summary', error);
+      Alert.alert('공유 실패', '공유하는 중 문제가 발생했어요. 다시 시도해 주세요.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   if (!payload) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, styles.errorContent]}>
         <Text style={styles.errorText}>요약 정보를 불러오지 못했어요.</Text>
         <Pressable style={styles.primaryButton} onPress={() => router.replace('/(tabs)/home')}>
           <Text style={styles.primaryLabel}>홈으로 돌아가기</Text>
@@ -70,39 +110,69 @@ export default function SummaryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroTitle}>산책 완료!</Text>
-        <Text style={styles.heroSubtitle}>댕댕이가 행복해하고 있어요 🐾</Text>
-      </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag">
+          <View style={styles.heroCard}>
+            <Text style={styles.heroTitle}>산책 완료!</Text>
+            <Text style={styles.heroSubtitle}>댕댕이가 행복해하고 있어요 🐾</Text>
+          </View>
 
-      <View style={styles.metricCard}>
-        <View style={styles.metricRow}>
-          <Text style={styles.metricLabel}>산책 시간</Text>
-          <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
-        </View>
-        <View style={styles.metricRow}>
-          <Text style={styles.metricLabel}>이동 거리</Text>
-          <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
-        </View>
-      </View>
+          <View style={styles.metricCard}>
+            <View style={styles.metricRow}>
+              <Text style={styles.metricLabel}>산책 시간</Text>
+              <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+            </View>
+            <View style={styles.metricRow}>
+              <Text style={styles.metricLabel}>이동 거리</Text>
+              <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
+            </View>
+          </View>
 
-      <View style={styles.memoBlock}>
-        <Text style={styles.memoLabel}>메모 (선택)</Text>
-        <TextInput
-          placeholder="산책 중 느낀 점이나 강아지 상태를 기록해보세요"
-          placeholderTextColor="#9ca3af"
-          style={styles.memoInput}
-          value={memo}
-          onChangeText={setMemo}
-          multiline
-        />
-      </View>
+          {payload.snapshotUri ? (
+            <View style={styles.snapshotCard}>
+              <Image
+                source={{ uri: payload.snapshotUri }}
+                style={styles.snapshotImage}
+                contentFit="cover"
+              />
+              <Pressable
+                style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
+                onPress={handleShare}
+                disabled={isSharing}
+              >
+                <Text style={styles.shareLabel}>{isSharing ? '공유 준비 중...' : '산책 공유하기'}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.snapshotPlaceholder}>
+              <Text style={styles.snapshotTitle}>지도 이미지를 만들지 못했어요</Text>
+              <Text style={styles.snapshotSubtitle}>네트워크 또는 권한 문제로 스냅샷 생성이 실패했을 수 있어요.</Text>
+            </View>
+          )}
 
-      <Pressable style={styles.primaryButton} onPress={handleSave} disabled={isSaving}>
-        <Text style={styles.primaryLabel}>{isSaving ? '저장 중...' : '기록 저장하기'}</Text>
-      </Pressable>
-    </SafeAreaView>
+          <View style={styles.memoBlock}>
+            <Text style={styles.memoLabel}>메모 (선택)</Text>
+            <TextInput
+              placeholder="산책 중 느낀 점이나 강아지 상태를 기록해보세요"
+              placeholderTextColor="#9ca3af"
+              style={styles.memoInput}
+              value={memo}
+              onChangeText={setMemo}
+              multiline
+              returnKeyType="done"
+            />
+          </View>
+
+          <Pressable style={styles.primaryButton} onPress={handleSave} disabled={isSaving}>
+            <Text style={styles.primaryLabel}>{isSaving ? '저장 중...' : '기록 저장하기'}</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -110,8 +180,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: 24,
     gap: 24,
+    paddingBottom: 40,
   },
   heroCard: {
     backgroundColor: '#ecfdf3',
@@ -156,6 +230,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
+  snapshotCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    gap: 16,
+    paddingBottom: 16,
+  },
+  snapshotImage: {
+    width: '100%',
+    height: 220,
+  },
+  shareButton: {
+    marginHorizontal: 16,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  shareButtonDisabled: {
+    opacity: 0.6,
+  },
+  shareLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  snapshotPlaceholder: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 20,
+    padding: 20,
+    gap: 8,
+  },
+  snapshotTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  snapshotSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+  },
   memoInput: {
     minHeight: 120,
     borderRadius: 16,
@@ -182,5 +303,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#374151',
     marginBottom: 24,
+  },
+  errorContent: {
+    padding: 24,
+    gap: 16,
+    justifyContent: 'center',
   },
 });
