@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Polyline, Region } from 'react-native-maps';
-import { useRouter } from 'expo-router';
-import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import MapView, { Polyline, Region } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { CoordinateTuple, haversineDistance } from '@/lib/geo';
 
@@ -17,8 +18,62 @@ interface WalkPayload {
   snapshotUri?: string;
 }
 
+const REGION_PADDING_FACTOR = 1.05;
+const MIN_REGION_DELTA = 0.002;
+
+const computeBoundingRegion = (points: CoordinateTuple[]): Region => {
+  if (points.length === 0) {
+    return {
+      latitude: 0,
+      longitude: 0,
+      latitudeDelta: MIN_REGION_DELTA,
+      longitudeDelta: MIN_REGION_DELTA,
+    };
+  }
+
+  let minLat = points[0][0];
+  let maxLat = points[0][0];
+  let minLon = points[0][1];
+  let maxLon = points[0][1];
+
+  for (const [lat, lon] of points) {
+    minLat = Math.min(minLat, lat);
+    maxLat = Math.max(maxLat, lat);
+    minLon = Math.min(minLon, lon);
+    maxLon = Math.max(maxLon, lon);
+  }
+
+  const latitude = (minLat + maxLat) / 2;
+  const longitude = (minLon + maxLon) / 2;
+  const latDelta = Math.max((maxLat - minLat) * REGION_PADDING_FACTOR, MIN_REGION_DELTA);
+  const lonDelta = Math.max((maxLon - minLon) * REGION_PADDING_FACTOR, MIN_REGION_DELTA);
+
+  return {
+    latitude,
+    longitude,
+    latitudeDelta: latDelta,
+    longitudeDelta: lonDelta,
+  };
+};
+
+const waitForFrames = (frameCount = 2) =>
+  new Promise<void>((resolve) => {
+    const step = (remaining: number) => {
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(() => step(remaining - 1));
+    };
+    step(frameCount);
+  });
+
 export default function WalkScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const themeColors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const pathPrimaryColor = themeColors.tint;
+  const pathOutlineColor = colorScheme === 'dark' ? 'rgba(15, 23, 42, 0.55)' : 'rgba(255, 255, 255, 0.92)';
   const [path, setPath] = useState<CoordinateTuple[]>([]);
   const [region, setRegion] = useState<Region | undefined>();
   const [elapsed, setElapsed] = useState(0);
@@ -69,12 +124,20 @@ export default function WalkScreen() {
     const map = mapRef.current;
     if (!map) return null;
     let restoreUserLocation = false;
+    let regionBeforeSnapshot: Region | undefined;
     try {
       if (showUserLocationRef.current) {
         restoreUserLocation = true;
         setShowUserLocation(false);
         showUserLocationRef.current = false;
         await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      }
+
+      if (path.length > 0) {
+        regionBeforeSnapshot = region;
+        const boundingRegion = computeBoundingRegion(path);
+        setRegion(boundingRegion);
+        await waitForFrames(3);
       }
 
       const snapshotPath = await map.takeSnapshot({
@@ -102,6 +165,9 @@ export default function WalkScreen() {
       if (restoreUserLocation && isMountedRef.current) {
         setShowUserLocation(true);
         showUserLocationRef.current = true;
+      }
+      if (regionBeforeSnapshot && isMountedRef.current) {
+        setRegion(regionBeforeSnapshot);
       }
     }
   };
@@ -173,7 +239,7 @@ export default function WalkScreen() {
       // );
 
       const SIMULATION_INTERVAL_MS = 2000;
-      const WALK_SPEED_MPS = 1.4; // 평균 보행 속도
+      const WALK_SPEED_MPS = 5; // 평균 보행 속도
 
       const advanceMockPosition = () => {
         setPath((prev) => {
@@ -182,7 +248,7 @@ export default function WalkScreen() {
           const stepDistanceMeters = WALK_SPEED_MPS * stepSeconds;
           const headingDeg = mockHeadingRef.current;
           const headingRad = (headingDeg * Math.PI) / 180;
-          mockHeadingRef.current = (mockHeadingRef.current + 12) % 360;
+          mockHeadingRef.current = 90;
 
           const metersNorth = Math.cos(headingRad) * stepDistanceMeters;
           const metersEast = Math.sin(headingRad) * stepDistanceMeters;
@@ -300,13 +366,22 @@ export default function WalkScreen() {
           showsUserLocation={showUserLocation}
           followsUserLocation>
           {path.length > 1 ? (
-            <Polyline
-              coordinates={path.map(([latitude, longitude]) => ({ latitude, longitude }))}
-              strokeColor={Colors.light.tint}
-              strokeWidth={5}
-              lineCap="round"
-              lineJoin="round"
-            />
+            <>
+              <Polyline
+                coordinates={path.map(([latitude, longitude]) => ({ latitude, longitude }))}
+                strokeColor={pathOutlineColor}
+                strokeWidth={11}
+                lineCap="round"
+                lineJoin="round"
+              />
+              <Polyline
+                coordinates={path.map(([latitude, longitude]) => ({ latitude, longitude }))}
+                strokeColor={pathPrimaryColor}
+                strokeWidth={7}
+                lineCap="round"
+                lineJoin="round"
+              />
+            </>
           ) : null}
         </MapView>
       ) : (

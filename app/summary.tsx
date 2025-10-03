@@ -110,69 +110,71 @@ export default function SummaryScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag">
-          <View style={styles.heroCard}>
-            <Text style={styles.heroTitle}>산책 완료!</Text>
-            <Text style={styles.heroSubtitle}>댕댕이가 행복해하고 있어요 🐾</Text>
-          </View>
-
-          <View style={styles.metricCard}>
-            <View style={styles.metricRow}>
-              <Text style={styles.metricLabel}>산책 시간</Text>
-              <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.scrollInner}>
+            <View style={styles.heroCard}>
+              <Text style={styles.heroTitle}>산책 완료!</Text>
+              <Text style={styles.heroSubtitle}>댕댕이가 행복해하고 있어요 🐾</Text>
             </View>
-            <View style={styles.metricRow}>
-              <Text style={styles.metricLabel}>이동 거리</Text>
-              <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
-            </View>
-          </View>
 
-          {payload.snapshotUri ? (
-            <View style={styles.snapshotCard}>
-              <Image
-                source={{ uri: payload.snapshotUri }}
-                style={styles.snapshotImage}
-                contentFit="cover"
+            <View style={styles.metricCard}>
+              <View style={styles.metricRow}>
+                <Text style={styles.metricLabel}>산책 시간</Text>
+                <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+              </View>
+              <View style={styles.metricRow}>
+                <Text style={styles.metricLabel}>이동 거리</Text>
+                <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
+              </View>
+            </View>
+
+            {payload.snapshotUri ? (
+              <View style={styles.snapshotCard}>
+                <Image
+                  source={{ uri: payload.snapshotUri }}
+                  style={styles.snapshotImage}
+                  contentFit="cover"
+                />
+                <Pressable
+                  style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
+                  onPress={handleShare}
+                  disabled={isSharing}
+                >
+                  <Text style={styles.shareLabel}>{isSharing ? '공유 준비 중...' : '산책 공유하기'}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.snapshotPlaceholder}>
+                <Text style={styles.snapshotTitle}>지도 이미지를 만들지 못했어요</Text>
+                <Text style={styles.snapshotSubtitle}>네트워크 또는 권한 문제로 스냅샷 생성이 실패했을 수 있어요.</Text>
+              </View>
+            )}
+
+            <View style={styles.memoBlock}>
+              <Text style={styles.memoLabel}>메모 (선택)</Text>
+              <TextInput
+                placeholder="산책 중 느낀 점이나 강아지 상태를 기록해보세요"
+                placeholderTextColor="#9ca3af"
+                style={styles.memoInput}
+                value={memo}
+                onChangeText={setMemo}
+                multiline
+                returnKeyType="done"
               />
-              <Pressable
-                style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
-                onPress={handleShare}
-                disabled={isSharing}
-              >
-                <Text style={styles.shareLabel}>{isSharing ? '공유 준비 중...' : '산책 공유하기'}</Text>
-              </Pressable>
             </View>
-          ) : (
-            <View style={styles.snapshotPlaceholder}>
-              <Text style={styles.snapshotTitle}>지도 이미지를 만들지 못했어요</Text>
-              <Text style={styles.snapshotSubtitle}>네트워크 또는 권한 문제로 스냅샷 생성이 실패했을 수 있어요.</Text>
-            </View>
-          )}
 
-          <View style={styles.memoBlock}>
-            <Text style={styles.memoLabel}>메모 (선택)</Text>
-            <TextInput
-              placeholder="산책 중 느낀 점이나 강아지 상태를 기록해보세요"
-              placeholderTextColor="#9ca3af"
-              style={styles.memoInput}
-              value={memo}
-              onChangeText={setMemo}
-              multiline
-              returnKeyType="done"
-            />
+            <Pressable style={styles.primaryButton} onPress={handleSave} disabled={isSaving}>
+              <Text style={styles.primaryLabel}>{isSaving ? '저장 중...' : '기록 저장하기'}</Text>
+            </Pressable>
           </View>
-
-          <Pressable style={styles.primaryButton} onPress={handleSave} disabled={isSaving}>
-            <Text style={styles.primaryLabel}>{isSaving ? '저장 중...' : '기록 저장하기'}</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -183,6 +185,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  scrollInner: {
     padding: 24,
     gap: 24,
     paddingBottom: 40,
