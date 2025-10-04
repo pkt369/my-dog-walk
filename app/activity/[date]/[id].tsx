@@ -18,7 +18,13 @@ import ViewShot, { captureRef } from 'react-native-view-shot';
 import { Colors } from '@/constants/theme';
 import { formatDateLabel, formatDistance, formatDuration } from '@/lib/format';
 import { loadWalkLogs, removeWalkLog, type WalkEntry } from '@/lib/walk-storage';
+import { shareCaptureStyles } from '../../../components/share-capture-styles';
 
+const waitForFrames = async (count: number = 2) => {
+  for (let i = 0; i < count; i++) {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+};
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
@@ -54,6 +60,7 @@ export default function ActivityDetailScreen() {
         return;
       }
       setIsSharing(true);
+      await waitForFrames(2);
       let shareUri = entry.snapshotUri;
 
       if (shareRef.current) {
@@ -141,27 +148,33 @@ export default function ActivityDetailScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.content}>
               {entry.snapshotUri ? (
-                <View style={styles.captureContainer}>
-                  <ViewShot ref={shareRef} style={styles.shareCapture} options={{ format: 'png', quality: 1 }} >
-                    <View style={styles.metricCardCapture}>
-                      <View style={styles.metricRow}>
-                        <Text style={styles.metricLabel}>산책 시간</Text>
-                        <Text style={styles.metricValue}>{formatDuration(entry.time)}</Text>
+                <View style={shareCaptureStyles.container}>
+                  <ViewShot
+                    ref={shareRef}
+                    style={[
+                      shareCaptureStyles.captureSurface,
+                      !isSharing && shareCaptureStyles.captureSurfaceRounded // 화면에서는 둥근 사각형, 공유 캡처 시엔 네모
+                    ]}
+                    options={{ format: 'png', quality: 1 }}>
+                    <View style={shareCaptureStyles.metricsCard}>
+                      <View style={shareCaptureStyles.metricRow}>
+                        <Text style={shareCaptureStyles.metricLabel}>산책 시간</Text>
+                        <Text style={shareCaptureStyles.metricValue}>{formatDuration(entry.time)}</Text>
                       </View>
-                      <View style={styles.metricRow}>
-                        <Text style={styles.metricLabel}>이동 거리</Text>
-                        <Text style={styles.metricValue}>{formatDistance(entry.distance)}</Text>
+                      <View style={shareCaptureStyles.metricRow}>
+                        <Text style={shareCaptureStyles.metricLabel}>이동 거리</Text>
+                        <Text style={shareCaptureStyles.metricValue}>{formatDistance(entry.distance)}</Text>
                       </View>
                     </View>
-                    <View style={styles.snapshotCardCapture}>
-                      <Image source={{ uri: entry.snapshotUri }} style={styles.snapshotImage} contentFit="cover" />
+                    <View style={shareCaptureStyles.snapshotCard}>
+                      <Image source={{ uri: entry.snapshotUri }} style={shareCaptureStyles.snapshotImage} contentFit="cover" />
                     </View>
                   </ViewShot>
                 </View>
               ) : (
-                <View style={styles.snapshotPlaceholder}>
-                  <Text style={styles.snapshotTitle}>지도 이미지를 찾을 수 없어요</Text>
-                  <Text style={styles.snapshotSubtitle}>이 산책에는 저장된 지도 스냅샷이 없어요.</Text>
+                <View style={shareCaptureStyles.placeholderCard}>
+                  <Text style={shareCaptureStyles.placeholderTitle}>지도 이미지를 찾을 수 없어요</Text>
+                  <Text style={shareCaptureStyles.placeholderSubtitle}>이 산책에는 저장된 지도 스냅샷이 없어요.</Text>
                 </View>
               )}
 
@@ -216,56 +229,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#374151',
   },
-  captureContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  metricCardCapture: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 20,
-    padding: 24,
-    gap: 16,
-    marginBottom: 16,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metricLabel: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  metricValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  snapshotImage: {
-    width: '100%',
-    height: 280,
-  },
-  snapshotPlaceholder: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    padding: 24,
-    gap: 8,
-  },
-  snapshotTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  snapshotSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-  },
   memoBlock: {
     gap: 8,
     padding: 20,
@@ -313,16 +276,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#fff',
-  },
-  shareCapture: {
-    gap: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-  },
-  snapshotCardCapture: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
   },
 });
