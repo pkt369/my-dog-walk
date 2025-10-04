@@ -141,29 +141,31 @@ export default function SummaryScreen() {
             </View>
 
             {payload.snapshotUri ? (
-              <ViewShot
-                ref={sharePreviewRef}
-                style={styles.shareCapture}
-                options={{ format: 'png', quality: 1 }}>
-                <View style={styles.metricCard}>
-                  <View style={styles.metricRow}>
-                    <Text style={styles.metricLabel}>산책 시간</Text>
-                    <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+              <View style={styles.captureContainer}>
+                <ViewShot
+                  ref={sharePreviewRef}
+                  style={styles.shareCapture}
+                  options={{ format: 'png', quality: 1 }}>
+                  <View style={styles.metricCardCapture}>
+                    <View style={styles.metricRow}>
+                      <Text style={styles.metricLabel}>산책 시간</Text>
+                      <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+                    </View>
+                    <View style={styles.metricRow}>
+                      <Text style={styles.metricLabel}>이동 거리</Text>
+                      <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
+                    </View>
                   </View>
-                  <View style={styles.metricRow}>
-                    <Text style={styles.metricLabel}>이동 거리</Text>
-                    <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
-                  </View>
-                </View>
 
-                <View style={styles.snapshotCardCapture}>
-                  <Image
-                    source={{ uri: payload.snapshotUri }}
-                    style={styles.snapshotImage}
-                    contentFit="cover"
-                  />
-                </View>
-              </ViewShot>
+                  <View style={styles.snapshotCardCapture}>
+                    <Image
+                      source={{ uri: payload.snapshotUri }}
+                      style={styles.snapshotImage}
+                      contentFit="cover"
+                    />
+                  </View>
+                </ViewShot>
+              </View>
             ) : (
               <View style={styles.snapshotPlaceholder}>
                 <Text style={styles.snapshotTitle}>지도 이미지를 만들지 못했어요</Text>
@@ -232,11 +234,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4b5563',
   },
-  metricCard: {
+  captureContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  metricCardCapture: {
     backgroundColor: '#f9fafb',
     borderRadius: 20,
-    padding: 20,
+    padding: 24,
     gap: 16,
+    margin: 20,
+    marginBottom: 16,
   },
   metricRow: {
     flexDirection: 'row',
@@ -260,18 +273,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
-  snapshotCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-    gap: 16,
-    paddingBottom: 16,
-  },
   snapshotImage: {
     width: '100%',
     height: 220,
@@ -280,7 +281,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
-    marginTop: 8,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   shareButton: {
     marginHorizontal: 16,
@@ -298,7 +300,10 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   shareCapture: {
-    gap: 20,
+    gap: 0,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   snapshotPlaceholder: {
     backgroundColor: '#f3f4f6',

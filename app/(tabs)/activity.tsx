@@ -1,9 +1,8 @@
 import { Image } from 'expo-image';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +11,6 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Sharing from 'expo-sharing';
 
 import { Colors } from '@/constants/theme';
 import { formatDateLabel, formatDistance, formatDuration } from '@/lib/format';
@@ -31,8 +29,8 @@ const formatTime = (iso: string) =>
   });
 
 export default function ActivityScreen() {
+  const router = useRouter();
   const [walkLogs, setWalkLogs] = useState<WalkLogMap>({});
-  const [selectedEntry, setSelectedEntry] = useState<WalkEntry | null>(null);
   const swipeableRefs = useRef<Record<string, Swipeable | null>>({});
 
   useFocusEffect(
@@ -72,27 +70,6 @@ export default function ActivityScreen() {
     ]);
   };
 
-  const handleShareEntry = async (entry: WalkEntry) => {
-    if (!entry.snapshotUri) {
-      Alert.alert('공유할 이미지가 없어요', '지도 스냅샷이 없는 기록은 공유할 수 없어요.');
-      return;
-    }
-    try {
-      const available = await Sharing.isAvailableAsync();
-      if (!available) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없어요.');
-        return;
-      }
-      await Sharing.shareAsync(entry.snapshotUri, {
-        mimeType: 'image/png',
-        dialogTitle: '산책 공유하기',
-      });
-    } catch (error) {
-      console.warn('Failed to share walk entry', error);
-      Alert.alert('공유 실패', '공유 중 문제가 발생했어요. 다시 시도해 주세요.');
-    }
-  };
-
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaView style={styles.container}>
@@ -128,7 +105,13 @@ export default function ActivityScreen() {
                           </Text>
                         </View>
                         {entry.snapshotUri ? (
-                          <Pressable onPress={() => setSelectedEntry(entry)}>
+                          <Pressable
+                            onPress={() =>
+                              router.push({
+                                pathname: '/activity/[date]/[id]',
+                                params: { date: dateKey, id: entry.id },
+                              })
+                            }>
                             <Image
                               source={{ uri: entry.snapshotUri }}
                               style={styles.entryImage}
@@ -137,13 +120,6 @@ export default function ActivityScreen() {
                           </Pressable>
                         ) : null}
                         {entry.memo ? <Text style={styles.entryMemo}>{entry.memo}</Text> : null}
-                        {entry.snapshotUri ? (
-                          <Pressable
-                            style={styles.entryShareButton}
-                            onPress={() => handleShareEntry(entry)}>
-                            <Text style={styles.entryShareLabel}>공유하기</Text>
-                          </Pressable>
-                        ) : null}
                       </View>
                     </Swipeable>
                   ))}
@@ -153,26 +129,6 @@ export default function ActivityScreen() {
           </ScrollView>
         )}
       </SafeAreaView>
-
-      <Modal visible={!!selectedEntry} transparent animationType="fade" onRequestClose={() => setSelectedEntry(null)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            {selectedEntry?.snapshotUri ? (
-              <Image source={{ uri: selectedEntry.snapshotUri }} style={styles.modalImage} contentFit="contain" />
-            ) : null}
-            <View style={styles.modalButtonRow}>
-              <Pressable style={styles.modalButton} onPress={() => setSelectedEntry(null)}>
-                <Text style={styles.modalButtonText}>닫기</Text>
-              </Pressable>
-              {selectedEntry?.snapshotUri ? (
-                <Pressable style={[styles.modalButton, styles.modalShareButton]} onPress={() => selectedEntry && handleShareEntry(selectedEntry)}>
-                  <Text style={[styles.modalButtonText, styles.modalShareButtonText]}>공유하기</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        </View>
-      </Modal>
     </GestureHandlerRootView>
   );
 }
@@ -230,18 +186,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingBottom: 0,
   },
-  entryShareButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: Colors.light.tint,
-  },
-  entryShareLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
   entryImage: {
     width: '100%',
     height: 140,
@@ -278,48 +222,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 16,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#0f172a',
-    borderRadius: 24,
-    padding: 20,
-    width: '100%',
-    maxWidth: 360,
-    gap: 16,
-  },
-  modalImage: {
-    width: '100%',
-    height: 320,
-    borderRadius: 16,
-    backgroundColor: '#111827',
-  },
-  modalButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  modalButtonText: {
-    color: '#e5e7eb',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  modalShareButton: {
-    backgroundColor: Colors.light.tint,
-  },
-  modalShareButtonText: {
-    color: '#fff',
   },
 });
