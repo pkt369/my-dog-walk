@@ -1,4 +1,7 @@
-import { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
+import { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -11,9 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import * as Sharing from 'expo-sharing';
+import ViewShot, { captureRef } from 'react-native-view-shot';
 
 import { Colors } from '@/constants/theme';
 import { formatDistance, formatDuration } from '@/lib/format';
@@ -33,6 +34,7 @@ export default function SummaryScreen() {
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const sharePreviewRef = useRef<ViewShot | null>(null);
 
   const payload = useMemo<SummaryPayload | null>(() => {
     const raw = params.payload;
@@ -86,7 +88,23 @@ export default function SummaryScreen() {
         return;
       }
       setIsSharing(true);
-      await Sharing.shareAsync(payload.snapshotUri, {
+      let shareUri = payload.snapshotUri;
+
+      if (sharePreviewRef.current) {
+        try {
+          const captured = await captureRef(sharePreviewRef.current, {
+            format: 'png',
+            quality: 0.95,
+          });
+          if (captured) {
+            shareUri = captured;
+          }
+        } catch (captureError) {
+          console.warn('Failed to capture share preview', captureError);
+        }
+      }
+
+      await Sharing.shareAsync(shareUri, {
         mimeType: 'image/png',
         dialogTitle: '산책 공유하기',
       });
@@ -122,38 +140,46 @@ export default function SummaryScreen() {
               <Text style={styles.heroSubtitle}>댕댕이가 행복해하고 있어요 🐾</Text>
             </View>
 
-            <View style={styles.metricCard}>
-              <View style={styles.metricRow}>
-                <Text style={styles.metricLabel}>산책 시간</Text>
-                <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
-              </View>
-              <View style={styles.metricRow}>
-                <Text style={styles.metricLabel}>이동 거리</Text>
-                <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
-              </View>
-            </View>
-
             {payload.snapshotUri ? (
-              <View style={styles.snapshotCard}>
-                <Image
-                  source={{ uri: payload.snapshotUri }}
-                  style={styles.snapshotImage}
-                  contentFit="cover"
-                />
-                <Pressable
-                  style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
-                  onPress={handleShare}
-                  disabled={isSharing}
-                >
-                  <Text style={styles.shareLabel}>{isSharing ? '공유 준비 중...' : '산책 공유하기'}</Text>
-                </Pressable>
-              </View>
+              <ViewShot
+                ref={sharePreviewRef}
+                style={styles.shareCapture}
+                options={{ format: 'png', quality: 1 }}>
+                <View style={styles.metricCard}>
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>산책 시간</Text>
+                    <Text style={styles.metricValue}>{formatDuration(payload.duration)}</Text>
+                  </View>
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>이동 거리</Text>
+                    <Text style={styles.metricValue}>{formatDistance(payload.distance)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.snapshotCardCapture}>
+                  <Image
+                    source={{ uri: payload.snapshotUri }}
+                    style={styles.snapshotImage}
+                    contentFit="cover"
+                  />
+                </View>
+              </ViewShot>
             ) : (
               <View style={styles.snapshotPlaceholder}>
                 <Text style={styles.snapshotTitle}>지도 이미지를 만들지 못했어요</Text>
                 <Text style={styles.snapshotSubtitle}>네트워크 또는 권한 문제로 스냅샷 생성이 실패했을 수 있어요.</Text>
               </View>
             )}
+
+            {payload.snapshotUri ? (
+              <Pressable
+                style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
+                onPress={handleShare}
+                disabled={isSharing}
+              >
+                <Text style={styles.shareLabel}>{isSharing ? '공유 준비 중...' : '산책 공유하기'}</Text>
+              </Pressable>
+            ) : null}
 
             <View style={styles.memoBlock}>
               <Text style={styles.memoLabel}>메모 (선택)</Text>
@@ -250,6 +276,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 220,
   },
+  snapshotCardCapture: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
   shareButton: {
     marginHorizontal: 16,
     backgroundColor: Colors.light.tint,
@@ -264,6 +296,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  shareCapture: {
+    gap: 20,
   },
   snapshotPlaceholder: {
     backgroundColor: '#f3f4f6',

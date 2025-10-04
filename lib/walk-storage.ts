@@ -45,6 +45,19 @@ export const addWalkLog = async (dateKey: string, entry: WalkEntry) => {
   return logs;
 };
 
+export const removeWalkLog = async (dateKey: string, entryId: string) => {
+  const logs = await loadWalkLogs();
+  const existing = logs[dateKey] ?? [];
+  const nextEntries = existing.filter((entry) => entry.id !== entryId);
+  if (nextEntries.length === 0) {
+    delete logs[dateKey];
+  } else {
+    logs[dateKey] = nextEntries;
+  }
+  await persistWalkLogs(logs);
+  return logs;
+};
+
 export const buildTodaySummary = (logs: WalkLogMap, dateKey: string) => {
   const entries = logs[dateKey] ?? [];
   return entries.reduce(

@@ -239,7 +239,7 @@ export default function WalkScreen() {
       // );
 
       const SIMULATION_INTERVAL_MS = 2000;
-      const WALK_SPEED_MPS = 5; // 평균 보행 속도
+      const WALK_SPEED_MPS = 20; // 평균 보행 속도
 
       const advanceMockPosition = () => {
         setPath((prev) => {
@@ -393,7 +393,7 @@ export default function WalkScreen() {
       <SafeAreaView style={styles.overlay}>
         <View style={styles.statsCard}>
           <View style={styles.statBlock}>
-            <Text style={styles.statLabel}>경과 시간</Text>
+            <Text style={styles.statLabel}>시간</Text>
             <Text style={styles.statValue}>{formatDuration(elapsed)}</Text>
           </View>
           <View style={styles.statBlock}>
