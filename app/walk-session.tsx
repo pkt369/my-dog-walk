@@ -87,10 +87,8 @@ export default function WalkScreen() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
-  const mockMovementRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTsRef = useRef<number | null>(null);
   const mapRef = useRef<MapView | null>(null);
-  const mockHeadingRef = useRef(0);
   const isMountedRef = useRef(true);
   const showUserLocationRef = useRef(true);
 
@@ -207,87 +205,44 @@ export default function WalkScreen() {
       startTsRef.current = Date.now();
       setIsTracking(true);
 
-      // 기존 위치 추적 로직 (실제 GPS 이동 감지)
-      // subscriptionRef.current = await Location.watchPositionAsync(
-      //   {
-      //     accuracy: Location.Accuracy.High,
-      //     timeInterval: 4000,
-      //     distanceInterval: 5,
-      //   },
-      //   (location) => {
-      //     setRegion((prev) => ({
-      //       latitude: location.coords.latitude,
-      //       longitude: location.coords.longitude,
-      //       latitudeDelta: prev?.latitudeDelta ?? 0.002,
-      //       longitudeDelta: prev?.longitudeDelta ?? 0.002,
-      //     }));
+      subscriptionRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 4000,
+          distanceInterval: 5,
+        },
+        (location) => {
+          if (!isMountedRef.current) {
+            return;
+          }
 
-      //     setPath((prev) => {
-      //       const nextPoint: CoordinateTuple = [
-      //         location.coords.latitude,
-      //         location.coords.longitude,
-      //       ];
-      //       if (prev.length === 0) {
-      //         return [nextPoint];
-      //       }
-      //       const lastPoint = prev[prev.length - 1];
-      //       const segment = haversineDistance(
-      //         { latitude: lastPoint[0], longitude: lastPoint[1] },
-      //         { latitude: nextPoint[0], longitude: nextPoint[1] }
-      //       );
-      //       setDistance((current) => current + segment);
-      //       return [...prev, nextPoint];
-      //     });
-      //   }
-      // );
-
-      const SIMULATION_INTERVAL_MS = 2000;
-      const WALK_SPEED_MPS = 20; // 평균 보행 속도
-
-      const advanceMockPosition = () => {
-        setPath((prev) => {
-          const lastPoint = prev[prev.length - 1] ?? initialPoint;
-          const stepSeconds = SIMULATION_INTERVAL_MS / 1000;
-          const stepDistanceMeters = WALK_SPEED_MPS * stepSeconds;
-          const headingDeg = mockHeadingRef.current;
-          const headingRad = (headingDeg * Math.PI) / 180;
-          mockHeadingRef.current = 90;
-
-          const metersNorth = Math.cos(headingRad) * stepDistanceMeters;
-          const metersEast = Math.sin(headingRad) * stepDistanceMeters;
-          const metersPerDegreeLat = 111_139;
-          const metersPerDegreeLonRaw = 111_139 * Math.cos((lastPoint[0] * Math.PI) / 180);
-          const metersPerDegreeLon = Math.max(1, Math.abs(metersPerDegreeLonRaw));
-
-          const deltaLat = metersNorth / metersPerDegreeLat;
-          const deltaLon = (metersEast / metersPerDegreeLon) * Math.sign(metersPerDegreeLonRaw || 1);
-
-          const nextPoint: CoordinateTuple = [lastPoint[0] + deltaLat, lastPoint[1] + deltaLon];
-
-          setRegion((prevRegion) => ({
-            latitude: nextPoint[0],
-            longitude: nextPoint[1],
-            latitudeDelta: prevRegion?.latitudeDelta ?? 0.002,
-            longitudeDelta: prevRegion?.longitudeDelta ?? 0.002,
+          setRegion((prev) => ({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: prev?.latitudeDelta ?? 0.002,
+            longitudeDelta: prev?.longitudeDelta ?? 0.002,
           }));
 
-          const segmentKm = haversineDistance(
-            { latitude: lastPoint[0], longitude: lastPoint[1] },
-            { latitude: nextPoint[0], longitude: nextPoint[1] }
-          );
-          setDistance((current) => current + segmentKm);
+          const nextPoint: CoordinateTuple = [
+            location.coords.latitude,
+            location.coords.longitude,
+          ];
 
-          return [...prev, nextPoint];
-        });
-      };
+          setPath((prev) => {
+            if (prev.length === 0) {
+              return [nextPoint];
+            }
 
-      if (mockMovementRef.current) {
-        clearInterval(mockMovementRef.current);
-        mockMovementRef.current = null;
-      }
-
-      advanceMockPosition();
-      mockMovementRef.current = setInterval(advanceMockPosition, SIMULATION_INTERVAL_MS);
+            const lastPoint = prev[prev.length - 1];
+            const segment = haversineDistance(
+              { latitude: lastPoint[0], longitude: lastPoint[1] },
+              { latitude: nextPoint[0], longitude: nextPoint[1] }
+            );
+            setDistance((current) => current + segment);
+            return [...prev, nextPoint];
+          });
+        }
+      );
     };
 
     startTracking();
@@ -298,10 +253,6 @@ export default function WalkScreen() {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
-      }
-      if (mockMovementRef.current) {
-        clearInterval(mockMovementRef.current);
-        mockMovementRef.current = null;
       }
     };
   }, [router]);
@@ -335,10 +286,6 @@ export default function WalkScreen() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-    }
-    if (mockMovementRef.current) {
-      clearInterval(mockMovementRef.current);
-      mockMovementRef.current = null;
     }
     setIsTracking(false);
 

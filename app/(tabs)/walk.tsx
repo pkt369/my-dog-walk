@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
+import type { ScrollView as ScrollViewType } from 'react-native';
 import {
   Pressable,
   ScrollView,
@@ -8,12 +9,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
-import { loadWalkLogs, sortDatesDesc, type WalkEntry } from '@/lib/walk-storage';
 import { useLocalization } from '@/lib/i18n';
+import { loadWalkLogs, sortDatesDesc, type WalkEntry } from '@/lib/walk-storage';
 
 export default function WalkTab() {
   const router = useRouter();

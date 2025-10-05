@@ -5,7 +5,7 @@ export default ({ config }) => {
     const Localization = require('expo-localization');
     locale = Localization.locale.toLowerCase();
   } catch (e) {
-    console.warn('expo-localization not available at config evaluation time');
+    // console.warn('expo-localization not available at config evaluation time');
   }
 
   let appName = 'DogWalk';
