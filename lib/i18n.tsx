@@ -35,9 +35,9 @@ const detectDeviceLanguage = (): SupportedLanguage => {
     const locales = ExpoLocalization.getLocales?.();
     if (locales && locales.length > 0) {
       const primary = locales[0];
-      return mapCodeToLanguage(primary.languageCode ?? primary.languageTag ?? primary.locale);
+      return mapCodeToLanguage(primary.languageCode ?? primary.languageTag);
     }
-    return mapCodeToLanguage(ExpoLocalization.locale);
+    return 'en';
   } catch (error) {
     console.warn('Failed to detect device language', error);
     return 'en';

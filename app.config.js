@@ -30,18 +30,19 @@ export default ({ config }) => {
         bundleIdentifier: 'com.datasurfing.dogwalk',
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
+          CFBundleDisplayName: appName,
+          CFBundleLocalizations: ['en', 'ko', 'ja'],
         },
       },
       android: {
         adaptiveIcon: {
           backgroundColor: '#E6F4FE',
-          foregroundImage: './assets/images/android-icon-foreground.png',
-          backgroundImage: './assets/images/android-icon-background.png',
-          monochromeImage: './assets/images/android-icon-monochrome.png',
+          foregroundImage: './assets/images/icon.png',
+          monochromeImage: './assets/images/icon.png',
         },
         edgeToEdgeEnabled: true,
         predictiveBackGestureEnabled: false,
-        package: 'com.devjun.dogwalk',
+        package: 'com.datasurfing.dogwalk',
       },
       web: {
         output: 'static',
@@ -74,7 +75,7 @@ export default ({ config }) => {
       ],
       experiments: {
         typedRoutes: true,
-        reactCompiler: true,
+        reactCompiler: false,
       },
       extra: {
         router: {},
