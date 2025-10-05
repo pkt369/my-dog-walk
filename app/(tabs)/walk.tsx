@@ -1,20 +1,30 @@
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
-import { formatDistance, formatDuration } from '@/lib/format';
 import { loadWalkLogs, sortDatesDesc, type WalkEntry } from '@/lib/walk-storage';
+import { useLocalization } from '@/lib/i18n';
 
 export default function WalkTab() {
   const router = useRouter();
+  const { strings, formatDuration, formatDistance } = useLocalization();
   const [recentWalk, setRecentWalk] = useState<WalkEntry | null>(null);
+  const scrollRef = useRef<ScrollViewType | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      scrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
       const load = async () => {
         const logs = await loadWalkLogs();
         if (!active) return;
@@ -31,36 +41,41 @@ export default function WalkTab() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Ready to walk?</Text>
-        <Text style={styles.heroSubtitle}>산책을 기록해봐요.</Text>
-      </View>
-
-      <Pressable style={styles.startButton} onPress={() => router.push('/walk-session')}>
-        <Text style={styles.startLabel}>START</Text>
-      </Pressable>
-
-      {recentWalk ? (
-        <View style={styles.recentCard}>
-          <Text style={styles.recentTitle}>마지막 산책</Text>
-          <Text style={styles.recentMetrics}>
-            {formatDuration(recentWalk.time)} · {formatDistance(recentWalk.distance)}
-          </Text>
-          {recentWalk.snapshotUri ? (
-            <Image
-              source={{ uri: recentWalk.snapshotUri }}
-              style={styles.recentSnapshot}
-              contentFit="cover"
-            />
-          ) : null}
-          {recentWalk.memo ? <Text style={styles.recentMemo}>{recentWalk.memo}</Text> : null}
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>{strings.walk.heroTitle}</Text>
+          <Text style={styles.heroSubtitle}>{strings.walk.heroSubtitle}</Text>
         </View>
-      ) : (
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderTitle}>첫 산책을 시작해보세요</Text>
-          <Text style={styles.placeholderSubtitle}>START 버튼을 눌러 산책을 기록합니다.</Text>
-        </View>
-      )}
+
+        <Pressable style={styles.startButton} onPress={() => router.push('/walk-session')}>
+          <Text style={styles.startLabel}>{strings.walk.startButton}</Text>
+        </Pressable>
+
+        {recentWalk ? (
+          <View style={styles.recentCard}>
+            <Text style={styles.recentTitle}>{strings.walk.recentTitle}</Text>
+            <Text style={styles.recentMetrics}>
+              {formatDuration(recentWalk.time)} · {formatDistance(recentWalk.distance)}
+            </Text>
+            {recentWalk.snapshotUri ? (
+              <Image
+                source={{ uri: recentWalk.snapshotUri }}
+                style={styles.recentSnapshot}
+                contentFit="cover"
+              />
+            ) : null}
+            {recentWalk.memo ? <Text style={styles.recentMemo}>{recentWalk.memo}</Text> : null}
+          </View>
+        ) : (
+          <View style={styles.placeholderCard}>
+            <Text style={styles.placeholderTitle}>{strings.walk.placeholderTitle}</Text>
+            <Text style={styles.placeholderSubtitle}>{strings.walk.placeholderSubtitle}</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -69,9 +84,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
+  },
+  content: {
     padding: 24,
     gap: 32,
-    justifyContent: 'center',
   },
   hero: {
     alignItems: 'center',

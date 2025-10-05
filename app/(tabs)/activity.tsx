@@ -1,19 +1,21 @@
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+  createRef,
+  useCallback,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
-import { formatDateLabel, formatDistance, formatDuration } from '@/lib/format';
 import {
   loadWalkLogs,
   removeWalkLog,
@@ -21,17 +23,29 @@ import {
   type WalkEntry,
   type WalkLogMap,
 } from '@/lib/walk-storage';
+import { useLocalization } from '@/lib/i18n';
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+const DELETE_ACTION_WIDTH = 100;
 
 export default function ActivityScreen() {
   const router = useRouter();
+  const {
+    strings,
+    formatDuration,
+    formatDistance,
+    formatDateLabel,
+    formatTime,
+  } = useLocalization();
   const [walkLogs, setWalkLogs] = useState<WalkLogMap>({});
-  const swipeableRefs = useRef<Record<string, Swipeable | null>>({});
+
+  const swipeableRefs = useRef<Record<string, RefObject<SwipeableMethods | null>>>({});
+
+  const getSwipeableRef = (id: string) => {
+    if (!swipeableRefs.current[id]) {
+      swipeableRefs.current[id] = createRef<SwipeableMethods | null>();
+    }
+    return swipeableRefs.current[id];
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -52,15 +66,15 @@ export default function ActivityScreen() {
 
   const closeSwipeable = (id: string) => {
     const ref = swipeableRefs.current[id];
-    ref?.close();
+    ref?.current?.close();
   };
 
   const handleDeleteEntry = (dateKey: string, entry: WalkEntry) => {
     closeSwipeable(entry.id);
-    Alert.alert('산책 삭제', '해당 산책 기록을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(strings.activity.deleteTitle, strings.activity.deleteMessage, [
+      { text: strings.common.cancel, style: 'cancel' },
       {
-        text: '삭제',
+        text: strings.common.delete,
         style: 'destructive',
         onPress: async () => {
           const nextLogs = await removeWalkLog(dateKey, entry.id);
@@ -75,8 +89,8 @@ export default function ActivityScreen() {
       <SafeAreaView style={styles.container}>
         {dates.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>아직 기록이 없어요</Text>
-            <Text style={styles.emptySubtitle}>첫 산책을 기록하면 여기에서 확인할 수 있어요.</Text>
+            <Text style={styles.emptyTitle}>{strings.activity.emptyTitle}</Text>
+            <Text style={styles.emptySubtitle}>{strings.activity.emptySubtitle}</Text>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -87,16 +101,18 @@ export default function ActivityScreen() {
                   {walkLogs[dateKey]?.map((entry: WalkEntry, index: number, arr) => (
                     <Swipeable
                       key={entry.id}
-                      ref={(ref) => {
-                        swipeableRefs.current[entry.id] = ref ?? null;
-                      }}
-                      renderLeftActions={() => (
-                        <View style={styles.swipeDeleteAction}>
-                          <Text style={styles.swipeDeleteText}>삭제</Text>
-                        </View>
+                      ref={getSwipeableRef(entry.id)}
+                      renderLeftActions={(progress, translation) => (
+                        <SwipeDeleteAction
+                          progress={progress}
+                          translation={translation}
+                          label={strings.activity.swipeDelete}
+                        />
                       )}
                       overshootLeft={false}
-                      onSwipeableOpen={() => handleDeleteEntry(dateKey, entry)}>
+                      onSwipeableOpen={() =>
+                        handleDeleteEntry(dateKey, entry)
+                      }>
                       <View style={[styles.entryRow, index === arr.length - 1 && styles.entryRowLast]}>
                         <View style={styles.entryMeta}>
                           <Text style={styles.entryTime}>{formatTime(entry.endedAt)}</Text>
@@ -132,6 +148,39 @@ export default function ActivityScreen() {
     </GestureHandlerRootView>
   );
 }
+
+type SwipeDeleteActionProps = {
+  progress: SharedValue<number>;
+  translation: SharedValue<number>;
+  label: string;
+};
+
+const SwipeDeleteAction = ({ progress, translation, label }: SwipeDeleteActionProps) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    const clampedTranslation = Math.min(
+      Math.max(translation.value, 0),
+      DELETE_ACTION_WIDTH
+    );
+    const visibleProgress = Math.min(Math.max(progress.value, 0), 1);
+
+    return {
+      opacity: visibleProgress,
+      transform: [
+        {
+          translateX: clampedTranslation - DELETE_ACTION_WIDTH,
+        },
+      ],
+    };
+  }, [progress, translation]);
+
+  return (
+    <Animated.View style={[styles.swipeDeleteContainer, animatedStyle]}>
+      <View style={styles.swipeDeleteAction}>
+        <Text style={styles.swipeDeleteText}>{label}</Text>
+      </View>
+    </Animated.View>
+  );
+};
 
 const styles = StyleSheet.create({
   flex: {
@@ -210,13 +259,19 @@ const styles = StyleSheet.create({
     color: '#111827',
     lineHeight: 20,
   },
-  swipeDeleteAction: {
-    flex: 1,
-    backgroundColor: '#ef4444',
-    borderRadius: 14,
-    marginVertical: 4,
+  swipeDeleteContainer: {
+    height: '100%',
     justifyContent: 'center',
+    width: DELETE_ACTION_WIDTH,
+    overflow: 'hidden',
+  },
+  swipeDeleteAction: {
+    height: '100%',
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 20,
+    marginVertical: 4,
   },
   swipeDeleteText: {
     color: '#fff',

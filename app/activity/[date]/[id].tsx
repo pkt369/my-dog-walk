@@ -16,9 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 
 import { Colors } from '@/constants/theme';
-import { formatDateLabel, formatDistance, formatDuration } from '@/lib/format';
 import { loadWalkLogs, removeWalkLog, type WalkEntry } from '@/lib/walk-storage';
 import { shareCaptureStyles } from '../../../components/share-capture-styles';
+import { useLocalization } from '@/lib/i18n';
 
 const waitForFrames = async (count: number = 2) => {
   for (let i = 0; i < count; i++) {
@@ -29,6 +29,12 @@ const waitForFrames = async (count: number = 2) => {
 export default function ActivityDetailScreen() {
   const router = useRouter();
   const { date, id } = useLocalSearchParams<{ date?: string; id?: string }>();
+  const {
+    strings,
+    formatDuration,
+    formatDistance,
+    formatDateLabel,
+  } = useLocalization();
   const [entry, setEntry] = useState<WalkEntry | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -49,14 +55,14 @@ export default function ActivityDetailScreen() {
 
   const handleShare = async () => {
     if (!entry?.snapshotUri) {
-      Alert.alert('이미지가 없어요', '지도 스냅샷을 찾을 수 없어 공유할 수 없어요.');
+      Alert.alert(strings.common.missingImageTitle, strings.common.missingImageMessage);
       return;
     }
 
     try {
       const available = await Sharing.isAvailableAsync();
       if (!available) {
-        Alert.alert('공유를 지원하지 않아요', '이 기기에서는 공유 기능을 사용할 수 없어요.');
+        Alert.alert(strings.common.shareUnavailableTitle, strings.common.shareUnavailableMessage);
         return;
       }
       setIsSharing(true);
@@ -79,11 +85,11 @@ export default function ActivityDetailScreen() {
 
       await Sharing.shareAsync(shareUri, {
         mimeType: 'image/png',
-        dialogTitle: '산책 공유하기',
+        dialogTitle: strings.common.shareDialogTitle,
       });
     } catch (error) {
       console.warn('Failed to share activity entry', error);
-      Alert.alert('공유 실패', '공유하는 중 문제가 발생했어요. 다시 시도해 주세요.');
+      Alert.alert(strings.common.shareFailedTitle, strings.common.shareFailedMessage);
     } finally {
       setIsSharing(false);
     }
@@ -92,10 +98,10 @@ export default function ActivityDetailScreen() {
   const handleDelete = () => {
     if (!entry || typeof date !== 'string') return;
 
-    Alert.alert('산책 삭제', '해당 산책 기록을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(strings.activity.deleteTitle, strings.activity.deleteMessage, [
+      { text: strings.common.cancel, style: 'cancel' },
       {
-        text: '삭제',
+        text: strings.common.delete,
         style: 'destructive',
         onPress: async () => {
           try {
@@ -106,7 +112,7 @@ export default function ActivityDetailScreen() {
           } catch (error) {
             console.warn('Failed to delete walk entry', error);
             setIsDeleting(false);
-            Alert.alert('삭제 실패', '산책 기록을 삭제하는 중 오류가 발생했어요. 다시 시도해 주세요.');
+            Alert.alert(strings.common.deleteFailedTitle, strings.common.deleteFailedMessage);
           }
         },
       },
@@ -121,9 +127,9 @@ export default function ActivityDetailScreen() {
   if (!isParamsValid) {
     return (
       <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>잘못된 경로로 접근했어요.</Text>
+        <Text style={styles.errorText}>{strings.activityDetail.invalidRouteMessage}</Text>
         <Pressable style={styles.primaryButton} onPress={() => router.back()}>
-          <Text style={styles.primaryLabel}>돌아가기</Text>
+          <Text style={styles.primaryLabel}>{strings.common.backButton}</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -132,9 +138,9 @@ export default function ActivityDetailScreen() {
   if (!entry) {
     return (
       <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>산책 기록을 찾지 못했어요.</Text>
+        <Text style={styles.errorText}>{strings.activityDetail.missingMessage}</Text>
         <Pressable style={styles.primaryButton} onPress={() => router.back()}>
-          <Text style={styles.primaryLabel}>돌아가기</Text>
+          <Text style={styles.primaryLabel}>{strings.common.backButton}</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -142,7 +148,7 @@ export default function ActivityDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: metricsLabel ?? '산책 기록' }} />
+      <Stack.Screen options={{ title: metricsLabel ?? strings.activityDetail.screenTitle }} />
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -158,11 +164,11 @@ export default function ActivityDetailScreen() {
                     options={{ format: 'png', quality: 1 }}>
                     <View style={shareCaptureStyles.metricsCard}>
                       <View style={shareCaptureStyles.metricRow}>
-                        <Text style={shareCaptureStyles.metricLabel}>산책 시간</Text>
+                        <Text style={shareCaptureStyles.metricLabel}>{strings.common.walkTimeLabel}</Text>
                         <Text style={shareCaptureStyles.metricValue}>{formatDuration(entry.time)}</Text>
                       </View>
                       <View style={shareCaptureStyles.metricRow}>
-                        <Text style={shareCaptureStyles.metricLabel}>이동 거리</Text>
+                        <Text style={shareCaptureStyles.metricLabel}>{strings.common.walkDistanceLabel}</Text>
                         <Text style={shareCaptureStyles.metricValue}>{formatDistance(entry.distance)}</Text>
                       </View>
                     </View>
@@ -173,14 +179,14 @@ export default function ActivityDetailScreen() {
                 </View>
               ) : (
                 <View style={shareCaptureStyles.placeholderCard}>
-                  <Text style={shareCaptureStyles.placeholderTitle}>지도 이미지를 찾을 수 없어요</Text>
-                  <Text style={shareCaptureStyles.placeholderSubtitle}>이 산책에는 저장된 지도 스냅샷이 없어요.</Text>
+                  <Text style={shareCaptureStyles.placeholderTitle}>{strings.activityDetail.snapshotMissingTitle}</Text>
+                  <Text style={shareCaptureStyles.placeholderSubtitle}>{strings.activityDetail.snapshotMissingSubtitle}</Text>
                 </View>
               )}
 
               {entry.memo ? (
                 <View style={styles.memoBlock}>
-                  <Text style={styles.memoLabel}>메모</Text>
+                  <Text style={styles.memoLabel}>{strings.activityDetail.memoLabel}</Text>
                   <Text style={styles.memoValue}>{entry.memo}</Text>
                 </View>
               ) : null}
@@ -190,13 +196,17 @@ export default function ActivityDetailScreen() {
                   style={[styles.actionButton, styles.shareButton]}
                   onPress={handleShare}
                   disabled={isSharing || !entry.snapshotUri}>
-                  <Text style={styles.actionButtonText}>{isSharing ? '공유 준비 중...' : '공유하기'}</Text>
+                  <Text style={styles.actionButtonText}>
+                    {isSharing ? strings.common.shareInProgress : strings.common.share}
+                  </Text>
                 </Pressable>
                 <Pressable
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={handleDelete}
                   disabled={isDeleting}>
-                  <Text style={styles.actionButtonText}>{isDeleting ? '삭제 중...' : '삭제하기'}</Text>
+                  <Text style={styles.actionButtonText}>
+                    {isDeleting ? strings.common.deleteInProgress : strings.common.deleteAction}
+                  </Text>
                 </Pressable>
               </View>
             </View>

@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
-import { formatDistance, formatDuration } from '@/lib/format';
 import { buildTodaySummary, loadWalkLogs, sortDatesDesc } from '@/lib/walk-storage';
+import { useLocalization } from '@/lib/i18n';
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { strings, formatDuration, formatDistance } = useLocalization();
   const [totalTime, setTotalTime] = useState(0);
   const [totalDistance, setTotalDistance] = useState(0);
   const [lastMemo, setLastMemo] = useState<string | undefined>();
@@ -40,34 +41,34 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBlock}>
-        <Text style={styles.greeting}>오늘도 산책하기 좋은 날이에요</Text>
-        <Text style={styles.title}>댕댕이와 떠나볼까요?</Text>
+        <Text style={styles.greeting}>{strings.home.greeting}</Text>
+        <Text style={styles.title}>{strings.home.title}</Text>
       </View>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>오늘의 기록</Text>
+        <Text style={styles.summaryLabel}>{strings.home.summaryTitle}</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{formatDuration(totalTime)}</Text>
-            <Text style={styles.summaryCaption}>산책 시간</Text>
+            <Text style={styles.summaryCaption}>{strings.common.walkTimeLabel}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{formatDistance(totalDistance)}</Text>
-            <Text style={styles.summaryCaption}>이동 거리</Text>
+            <Text style={styles.summaryCaption}>{strings.common.walkDistanceLabel}</Text>
           </View>
         </View>
       </View>
 
-      <Text style={styles.tipText}>Walk 탭의 START 버튼을 눌러 산책을 시작하세요.</Text>
+      <Text style={styles.tipText}>{strings.home.startTip}</Text>
 
       <Pressable style={styles.secondaryButton} onPress={() => router.push('/(tabs)/activity')}>
-        <Text style={styles.secondaryLabel}>히스토리 보기</Text>
+        <Text style={styles.secondaryLabel}>{strings.home.historyButton}</Text>
       </Pressable>
 
       {lastMemo ? (
         <View style={styles.memoCard}>
-          <Text style={styles.memoTitle}>최근 메모</Text>
+          <Text style={styles.memoTitle}>{strings.home.memoTitle}</Text>
           <Text style={styles.memoText}>{lastMemo}</Text>
         </View>
       ) : null}

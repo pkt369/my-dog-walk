@@ -2,8 +2,11 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/theme';
+import { useLocalization } from '@/lib/i18n';
 
 export default function TabLayout() {
+  const { strings } = useLocalization();
+
   return (
     <Tabs
       screenOptions={{
@@ -27,22 +30,33 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: strings.tabs.home,
+          tabBarLabel: strings.tabs.home,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="walk"
         options={{
-          title: 'Walk',
+          title: strings.tabs.walk,
+          tabBarLabel: strings.tabs.walk,
           tabBarIcon: ({ color, size }) => <Ionicons name="footsteps" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Activity',
+          title: strings.tabs.activity,
+          tabBarLabel: strings.tabs.activity,
           tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: strings.tabs.settings,
+          tabBarLabel: strings.tabs.settings,
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />
     </Tabs>

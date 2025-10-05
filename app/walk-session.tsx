@@ -8,8 +8,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatDistance, formatDuration } from '@/lib/format';
+import { useInterstitialAd } from '@/hooks/use-interstitial-ad';
 import { CoordinateTuple, haversineDistance } from '@/lib/geo';
+import { useLocalization } from '@/lib/i18n';
 
 interface WalkPayload {
   duration: number;
@@ -74,6 +75,7 @@ export default function WalkScreen() {
   const themeColors = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const pathPrimaryColor = themeColors.tint;
   const pathOutlineColor = colorScheme === 'dark' ? 'rgba(15, 23, 42, 0.55)' : 'rgba(255, 255, 255, 0.92)';
+  const { strings, formatDuration, formatDistance } = useLocalization();
   const [path, setPath] = useState<CoordinateTuple[]>([]);
   const [region, setRegion] = useState<Region | undefined>();
   const [elapsed, setElapsed] = useState(0);
@@ -81,6 +83,7 @@ export default function WalkScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [showUserLocation, setShowUserLocation] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
+  const { showAd } = useInterstitialAd();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
@@ -176,8 +179,8 @@ export default function WalkScreen() {
     const startTracking = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('위치 권한 필요', '산책을 기록하려면 위치 접근 허용이 필요해요.', [
-          { text: '확인', onPress: () => router.back() },
+        Alert.alert(strings.walkSession.locationPermissionTitle, strings.walkSession.locationPermissionMessage, [
+          { text: strings.common.confirm, onPress: () => router.back() },
         ]);
         return;
       }
@@ -351,9 +354,19 @@ export default function WalkScreen() {
       path,
       snapshotUri: snapshotUri ?? undefined,
     };
+    const serializedPayload = JSON.stringify(payload);
 
-    setIsCompleting(false);
-    router.replace({ pathname: '/summary', params: { payload: JSON.stringify(payload) } });
+    try {
+      await showAd();
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('[ads] Interstitial show failed', error);
+      }
+    } finally {
+      setIsCompleting(false);
+    }
+
+    router.replace({ pathname: '/summary', params: { payload: serializedPayload } });
   };
 
   return (
@@ -386,24 +399,26 @@ export default function WalkScreen() {
         </MapView>
       ) : (
         <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>위치 정보를 불러오는 중이에요…</Text>
+          <Text style={styles.placeholderText}>{strings.walkSession.loadingPosition}</Text>
         </View>
       )}
 
       <SafeAreaView style={styles.overlay}>
         <View style={styles.statsCard}>
           <View style={styles.statBlock}>
-            <Text style={styles.statLabel}>시간</Text>
+            <Text style={styles.statLabel}>{strings.common.timeLabel}</Text>
             <Text style={styles.statValue}>{formatDuration(elapsed)}</Text>
           </View>
           <View style={styles.statBlock}>
-            <Text style={styles.statLabel}>이동 거리</Text>
+            <Text style={styles.statLabel}>{strings.common.walkDistanceLabel}</Text>
             <Text style={styles.statValue}>{formatDistance(distance)}</Text>
           </View>
         </View>
 
         <Pressable style={styles.stopButton} onPress={handleStop} disabled={isCompleting}>
-          <Text style={styles.stopLabel}>{isCompleting ? '처리 중...' : '산책 종료'}</Text>
+          <Text style={styles.stopLabel}>
+            {isCompleting ? strings.walkSession.stopInProgress : strings.walkSession.stopButton}
+          </Text>
         </Pressable>
       </SafeAreaView>
     </View>
