@@ -17,6 +17,7 @@ export default ({ config }) => {
 
   return {
     expo: {
+      owner: 'devjun',
       name: appName,
       slug: 'dogwalk',
       version: '1.0.0',
@@ -80,7 +81,7 @@ export default ({ config }) => {
       extra: {
         router: {},
         eas: {
-          projectId: '06d146bc-5c06-4013-8257-0da577e21600',
+          "projectId": "05dafe7d-293e-4d0b-9057-4a8f6e5d2e76"
         },
       },
     },
