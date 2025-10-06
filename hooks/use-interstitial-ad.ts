@@ -4,7 +4,9 @@ import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile
 
 const isNativePlatform = Platform.OS === 'ios' || Platform.OS === 'android';
 
-const platformSpecificUnitId = __DEV__
+const buildProfile = process.env.EAS_BUILD_PROFILE;
+
+const platformSpecificUnitId = __DEV__ || buildProfile === 'development' || buildProfile === 'preview'
   ? TestIds.INTERSTITIAL
   : Platform.select({
     ios: process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_IOS,
