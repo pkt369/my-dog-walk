@@ -27,7 +27,7 @@ export default ({ config }) => {
       userInterfaceStyle: 'automatic',
       newArchEnabled: true,
       ios: {
-        supportsTablet: true,
+        supportsTablet: false,
         bundleIdentifier: 'com.datasurfing.dogwalk',
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
