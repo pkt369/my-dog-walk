@@ -17,7 +17,8 @@ export default ({ config }) => {
 
   return {
     expo: {
-      owner: 'devjun',
+      versionCode: 3,
+      owner: 'datasurfing',
       name: appName,
       slug: 'dogwalk',
       version: '1.0.0',
@@ -33,6 +34,7 @@ export default ({ config }) => {
           ITSAppUsesNonExemptEncryption: false,
           CFBundleDisplayName: appName,
           CFBundleLocalizations: ['en', 'ko', 'ja'],
+          GMSApiKey: process.env.GOOGLE_MAPS_API_KEY_IOS,
         },
       },
       android: {
@@ -44,6 +46,17 @@ export default ({ config }) => {
         edgeToEdgeEnabled: true,
         predictiveBackGestureEnabled: false,
         package: 'com.datasurfing.dogwalk',
+        config: {
+          androidManifest: {
+            supportsScreens: {
+              smallScreens: true,
+              normalScreens: true,
+              largeScreens: false,
+              xlargeScreens: false,
+              anyDensity: true,
+            },
+          },
+        },
       },
       web: {
         output: 'static',
