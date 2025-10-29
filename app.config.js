@@ -34,7 +34,6 @@ export default ({ config }) => {
           ITSAppUsesNonExemptEncryption: false,
           CFBundleDisplayName: appName,
           CFBundleLocalizations: ['en', 'ko', 'ja'],
-          GMSApiKey: process.env.GOOGLE_MAPS_API_KEY_IOS,
         },
       },
       android: {

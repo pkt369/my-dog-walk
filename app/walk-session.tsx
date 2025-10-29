@@ -20,7 +20,7 @@ interface WalkPayload {
 }
 
 const REGION_PADDING_FACTOR = 1.05;
-const MIN_REGION_DELTA = 0.002;
+const MIN_REGION_DELTA = 0.007;
 
 const computeBoundingRegion = (points: CoordinateTuple[]): Region => {
   if (points.length === 0) {
@@ -83,6 +83,7 @@ export default function WalkScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [showUserLocation, setShowUserLocation] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<'good' | 'poor'>('good');
   const { showAd } = useInterstitialAd();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -184,7 +185,7 @@ export default function WalkScreen() {
       }
 
       const initial = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
+        accuracy: Location.Accuracy.BestForNavigation,
       });
 
       const initialPoint: CoordinateTuple = [
@@ -198,8 +199,8 @@ export default function WalkScreen() {
       setRegion({
         latitude: initial.coords.latitude,
         longitude: initial.coords.longitude,
-        latitudeDelta: 0.002,
-        longitudeDelta: 0.002,
+        latitudeDelta: 0.007,
+        longitudeDelta: 0.007,
       });
 
       startTsRef.current = Date.now();
@@ -207,20 +208,28 @@ export default function WalkScreen() {
 
       subscriptionRef.current = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 4000,
-          distanceInterval: 5,
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 2000,
+          distanceInterval: 1,
         },
         (location) => {
           if (!isMountedRef.current) {
             return;
           }
 
+          // Filter out locations with poor accuracy
+          if (location.coords.accuracy != null && location.coords.accuracy > 50) {
+            console.log(location.coords.accuracy);
+            setGpsAccuracy('poor');
+            return;
+          }
+          setGpsAccuracy('good');
+
           setRegion((prev) => ({
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
-            latitudeDelta: prev?.latitudeDelta ?? 0.002,
-            longitudeDelta: prev?.longitudeDelta ?? 0.002,
+            latitudeDelta: prev?.latitudeDelta ?? 0.007,
+            longitudeDelta: prev?.longitudeDelta ?? 0.007,
           }));
 
           const nextPoint: CoordinateTuple = [
@@ -238,7 +247,15 @@ export default function WalkScreen() {
               { latitude: lastPoint[0], longitude: lastPoint[1] },
               { latitude: nextPoint[0], longitude: nextPoint[1] }
             );
+
+            // 이상치 제거 ( GPS 튀거나 1m 이하 )
+            if (segment < 1 || segment > 50) {
+              console.log('[walk] Ignoring distance jump: ', segment);
+              return prev;
+            }
+
             setDistance((current) => current + segment);
+
             return [...prev, nextPoint];
           });
         }
@@ -330,16 +347,18 @@ export default function WalkScreen() {
               <Polyline
                 coordinates={path.map(([latitude, longitude]) => ({ latitude, longitude }))}
                 strokeColor={pathOutlineColor}
-                strokeWidth={11}
+                strokeWidth={14}
                 lineCap="round"
                 lineJoin="round"
+                geodesic={true}
               />
               <Polyline
                 coordinates={path.map(([latitude, longitude]) => ({ latitude, longitude }))}
                 strokeColor={pathPrimaryColor}
-                strokeWidth={7}
+                strokeWidth={11}
                 lineCap="round"
                 lineJoin="round"
+                geodesic={true}
               />
             </>
           ) : null}
@@ -351,6 +370,11 @@ export default function WalkScreen() {
       )}
 
       <SafeAreaView style={styles.overlay}>
+        {gpsAccuracy === 'poor' && (
+          <View style={styles.gpsWarning}>
+            <Text style={styles.gpsWarningText}>{strings.walkSession.weakGpsSignal}</Text>
+          </View>
+        )}
         <View style={styles.statsCard}>
           <View style={styles.statBlock}>
             <Text style={styles.statLabel}>{strings.common.timeLabel}</Text>
@@ -423,5 +447,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  gpsWarning: {
+    backgroundColor: 'rgba(251, 191, 36, 0.95)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  gpsWarningText: {
+    color: '#78350f',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

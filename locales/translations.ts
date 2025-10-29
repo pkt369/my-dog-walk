@@ -83,6 +83,7 @@ export type TranslationTree = {
     loadingPosition: string;
     stopButton: string;
     stopInProgress: string;
+    weakGpsSignal: string;
   };
   settings: {
     title: string;
@@ -177,6 +178,7 @@ const ko: TranslationTree = {
     loadingPosition: '위치 정보를 불러오는 중이에요...',
     stopButton: '산책 종료',
     stopInProgress: '처리 중...',
+    weakGpsSignal: 'GPS 신호가 약합니다',
   },
   settings: {
     title: '앱 설정',
@@ -275,6 +277,7 @@ const en: TranslationTree = {
     loadingPosition: 'Loading your location...',
     stopButton: 'Finish walk',
     stopInProgress: 'Working...',
+    weakGpsSignal: 'Weak GPS signal',
   },
   settings: {
     title: 'App settings',
@@ -373,6 +376,7 @@ const ja: TranslationTree = {
     loadingPosition: '位置情報を読み込み中...',
     stopButton: 'おさんぽ終了',
     stopInProgress: '処理しています...',
+    weakGpsSignal: 'GPS信号が弱いです',
   },
   settings: {
     title: 'アプリ設定',
