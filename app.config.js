@@ -9,10 +9,14 @@ export default ({ config }) => {
   }
 
   let appName = 'DogWalk';
+  let trackingDescription = 'This app needs tracking permission to provide customized ads.';
+
   if (locale.startsWith('ko')) {
     appName = '도그워크';
+    trackingDescription = '이 앱은 맞춤형 광고 제공을 위해 추적 권한이 필요합니다.';
   } else if (locale.startsWith('ja')) {
     appName = 'ドッグウォーク';
+    trackingDescription = 'このアプリはカスタマイズされた広告を提供するために追跡許可が必要です。';
   }
 
   return {
@@ -34,6 +38,7 @@ export default ({ config }) => {
           ITSAppUsesNonExemptEncryption: false,
           CFBundleDisplayName: appName,
           CFBundleLocalizations: ['en', 'ko', 'ja'],
+          NSUserTrackingUsageDescription: trackingDescription,
         },
       },
       android: {
