@@ -20,7 +20,7 @@ interface WalkPayload {
 }
 
 const REGION_PADDING_FACTOR = 1.05;
-const MIN_REGION_DELTA = 0.007;
+const MIN_REGION_DELTA = 0.005;
 
 const computeBoundingRegion = (points: CoordinateTuple[]): Region => {
   if (points.length === 0) {
@@ -199,8 +199,8 @@ export default function WalkScreen() {
       setRegion({
         latitude: initial.coords.latitude,
         longitude: initial.coords.longitude,
-        latitudeDelta: 0.007,
-        longitudeDelta: 0.007,
+        latitudeDelta: MIN_REGION_DELTA,
+        longitudeDelta: MIN_REGION_DELTA,
       });
 
       startTsRef.current = Date.now();
@@ -228,8 +228,8 @@ export default function WalkScreen() {
           setRegion((prev) => ({
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
-            latitudeDelta: prev?.latitudeDelta ?? 0.007,
-            longitudeDelta: prev?.longitudeDelta ?? 0.007,
+            latitudeDelta: prev?.latitudeDelta ?? MIN_REGION_DELTA,
+            longitudeDelta: prev?.longitudeDelta ?? MIN_REGION_DELTA,
           }));
 
           const nextPoint: CoordinateTuple = [
@@ -248,8 +248,8 @@ export default function WalkScreen() {
               { latitude: nextPoint[0], longitude: nextPoint[1] }
             );
 
-            // 이상치 제거 ( GPS 튀거나 1m 이하 )
-            if (segment < 1 || segment > 50) {
+            // segment는 km 단위
+            if (segment > 0.05) {
               console.log('[walk] Ignoring distance jump: ', segment);
               return prev;
             }
