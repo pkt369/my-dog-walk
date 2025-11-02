@@ -80,10 +80,16 @@ export type TranslationTree = {
   walkSession: {
     locationPermissionTitle: string;
     locationPermissionMessage: string;
+    backgroundPermissionTitle: string;
+    backgroundPermissionMessage: string;
     loadingPosition: string;
     stopButton: string;
     stopInProgress: string;
     weakGpsSignal: string;
+    trackingActive: string;
+    trackingDescription: string;
+    justStarted: string;
+    walkComplete: string;
   };
   settings: {
     title: string;
@@ -175,10 +181,16 @@ const ko: TranslationTree = {
   walkSession: {
     locationPermissionTitle: '위치 권한 필요',
     locationPermissionMessage: '산책을 기록하려면 위치 접근 허용이 필요해요.',
+    backgroundPermissionTitle: '백그라운드 위치 권한 필요',
+    backgroundPermissionMessage: '앱이 닫혀있을 때도 산책을 추적하려면 백그라운드 위치 접근 허용이 필요해요.',
     loadingPosition: '위치 정보를 불러오는 중이에요...',
     stopButton: '산책 종료',
     stopInProgress: '처리 중...',
     weakGpsSignal: 'GPS 신호가 약합니다',
+    trackingActive: '🐕 산책 중',
+    trackingDescription: '산책을 추적하고 있어요...',
+    justStarted: '방금 시작했어요',
+    walkComplete: '산책 완료!',
   },
   settings: {
     title: '앱 설정',
@@ -274,10 +286,16 @@ const en: TranslationTree = {
   walkSession: {
     locationPermissionTitle: 'Location needed',
     locationPermissionMessage: 'Allow location access to record the walk.',
+    backgroundPermissionTitle: 'Background location needed',
+    backgroundPermissionMessage: 'Allow background location access to track your walk when the app is closed.',
     loadingPosition: 'Loading your location...',
     stopButton: 'Finish walk',
     stopInProgress: 'Working...',
     weakGpsSignal: 'Weak GPS signal',
+    trackingActive: '🐕 Dog Walk Active',
+    trackingDescription: 'Tracking your walk...',
+    justStarted: 'Just started',
+    walkComplete: 'Walk complete!',
   },
   settings: {
     title: 'App settings',
@@ -373,10 +391,16 @@ const ja: TranslationTree = {
   walkSession: {
     locationPermissionTitle: '位置情報が必要です',
     locationPermissionMessage: 'おさんぽを記録するには位置情報の許可が必要です。',
+    backgroundPermissionTitle: 'バックグラウンド位置情報が必要です',
+    backgroundPermissionMessage: 'アプリを閉じてもおさんぽを追跡するには、バックグラウンド位置情報の許可が必要です。',
     loadingPosition: '位置情報を読み込み中...',
     stopButton: 'おさんぽ終了',
     stopInProgress: '処理しています...',
     weakGpsSignal: 'GPS信号が弱いです',
+    trackingActive: '🐕 おさんぽ中',
+    trackingDescription: 'おさんぽを記録しています...',
+    justStarted: 'いまスタート',
+    walkComplete: 'おさんぽ完了!',
   },
   settings: {
     title: 'アプリ設定',

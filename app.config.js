@@ -39,6 +39,7 @@ export default ({ config }) => {
           CFBundleDisplayName: appName,
           CFBundleLocalizations: ['en', 'ko', 'ja'],
           NSUserTrackingUsageDescription: trackingDescription,
+          UIBackgroundModes: ['location'],
         },
       },
       android: {
@@ -88,6 +89,24 @@ export default ({ config }) => {
             userTrackingUsageDescription: '맞춤 광고 제공을 위해 기기 식별자를 사용합니다.',
             iosAppId: 'ca-app-pub-9912842723450619~7600130981',
             androidAppId: 'ca-app-pub-9912842723450619~1091413015',
+          },
+        ],
+        [
+          'expo-location',
+          {
+            locationAlwaysAndWhenInUsePermission: 'Allow DogWalk to use your location to track your walks.',
+            locationAlwaysPermission: 'Allow DogWalk to use your location even when the app is in the background to continue tracking your walk.',
+            locationWhenInUsePermission: 'Allow DogWalk to use your location to track your walks.',
+            isAndroidBackgroundLocationEnabled: true,
+            isAndroidForegroundServiceEnabled: true,
+          },
+        ],
+        [
+          'expo-notifications',
+          {
+            icon: './assets/images/icon.png',
+            color: '#E6F4FE',
+            sounds: [],
           },
         ],
       ],

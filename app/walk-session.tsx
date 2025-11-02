@@ -9,6 +9,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useInterstitialAd } from '@/hooks/use-interstitial-ad';
+import {
+  startBackgroundLocationTracking,
+  stopBackgroundLocationTracking
+} from '@/lib/background-location';
 import { CoordinateTuple, haversineDistance } from '@/lib/geo';
 import { useLocalization } from '@/lib/i18n';
 
@@ -176,6 +180,7 @@ export default function WalkScreen() {
 
   useEffect(() => {
     const startTracking = async () => {
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(strings.walkSession.locationPermissionTitle, strings.walkSession.locationPermissionMessage, [
@@ -206,6 +211,24 @@ export default function WalkScreen() {
       startTsRef.current = Date.now();
       setIsTracking(true);
 
+      // Start background location tracking
+      const notificationTitle = strings.walkSession.trackingActive || '🐕 Dog Walk Active';
+      const notificationBody = strings.walkSession.trackingDescription || 'Tracking your walk...';
+
+      const started = await startBackgroundLocationTracking({
+        notificationTitle,
+        notificationBody,
+      });
+
+      if (!started) {
+        Alert.alert(
+          strings.walkSession.backgroundPermissionTitle || 'Background Permission Required',
+          strings.walkSession.backgroundPermissionMessage || 'Please allow background location access to track your walk when the app is closed.',
+          [{ text: strings.common.confirm }]
+        );
+      }
+
+      // Start foreground-only subscription for real-time UI updates
       subscriptionRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
@@ -272,8 +295,9 @@ export default function WalkScreen() {
         timerRef.current = null;
       }
     };
-  }, [router]);
+  }, [router, strings]);
 
+  // Timer for elapsed time (updates every second)
   useEffect(() => {
     if (!isTracking) return;
 
@@ -298,8 +322,11 @@ export default function WalkScreen() {
     if (isCompleting) return;
     setIsCompleting(true);
 
+    // Stop foreground subscription
     subscriptionRef.current?.remove();
     subscriptionRef.current = null;
+
+    // Stop timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -310,12 +337,29 @@ export default function WalkScreen() {
       ? Math.floor((Date.now() - startTsRef.current) / 1000)
       : elapsed;
 
+    // Stop background location tracking and get final data
+    const backgroundSession = await stopBackgroundLocationTracking();
+
+    // Use background data if available and has more points
+    let finalPath = path;
+    let finalDistance = distance;
+
+    if (backgroundSession && backgroundSession.path.length > path.length) {
+      console.log('[walk] Using background session data:', {
+        foregroundPoints: path.length,
+        backgroundPoints: backgroundSession.path.length,
+        backgroundDistance: backgroundSession.distance,
+      });
+      finalPath = backgroundSession.path;
+      finalDistance = backgroundSession.distance;
+    }
+
     const snapshotUri = await captureSnapshot();
 
     const payload: WalkPayload = {
       duration: finalDuration,
-      distance,
-      path,
+      distance: finalDistance,
+      path: finalPath,
       snapshotUri: snapshotUri ?? undefined,
     };
     const serializedPayload = JSON.stringify(payload);
