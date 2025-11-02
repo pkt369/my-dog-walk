@@ -11,12 +11,28 @@ export default ({ config }) => {
   let appName = 'DogWalk';
   let trackingDescription = 'This app needs tracking permission to provide customized ads.';
 
+  let locationAlwaysAndWhenInUsePermission = 'DogWalk uses your location, even while the app is in the background, to record your entire walking route and provide accurate distance and time tracking.';
+  let locationAlwaysPermission = 'DogWalk accesses your location even when the app is in the background to record your full walking route and ensure accurate distance and time tracking.';
+  let locationWhenInUsePermission = 'DogWalk uses your location while the app is in use to record your walking route and provide distance and time tracking. To record the full route, allow background location access.';
+
   if (locale.startsWith('ko')) {
     appName = '도그워크';
     trackingDescription = '이 앱은 맞춤형 광고 제공을 위해 추적 권한이 필요합니다.';
+    locationAlwaysAndWhenInUsePermission =
+      '도그워크는 산책 경로 전체를 기록하고 정확한 거리 및 시간 추적을 제공하기 위해 앱이 백그라운드에 있을 때도 위치 정보를 사용합니다.';
+    locationAlwaysPermission =
+      '도그워크가 앱이 백그라운드에 있을 때도 위치 정보에 접근하여 산책 경로 전체를 기록하고, 정확한 거리와 시간 추적을 제공할 수 있도록 허용합니다.';
+    locationWhenInUsePermission =
+      '도그워크가 앱 사용 중에 위치 정보를 사용하여 산책 경로를 기록하고 거리 및 시간 추적을 제공합니다. 전체 경로 기록을 위해서는 백그라운드 위치 접근을 허용해 주세요.';
   } else if (locale.startsWith('ja')) {
     appName = 'ドッグウォーク';
     trackingDescription = 'このアプリはカスタマイズされた広告を提供するために追跡許可が必要です。';
+    locationAlwaysAndWhenInUsePermission =
+      'ドッグウォークは、アプリがバックグラウンドにある場合でも位置情報を利用して、散歩ルート全体を記録し、正確な距離と時間の追跡を行います。';
+    locationAlwaysPermission =
+      'ドッグウォークがアプリがバックグラウンドにある場合でも位置情報にアクセスし、散歩ルート全体を記録して正確な距離と時間を追跡できるように許可してください。';
+    locationWhenInUsePermission =
+      'ドッグウォークがアプリ使用中に位置情報を利用して散歩ルートを記録し、距離と時間の追跡を行います。ルート全体を記録するにはバックグラウンドでの位置情報利用を許可してください。';
   }
 
   return {
@@ -94,9 +110,9 @@ export default ({ config }) => {
         [
           'expo-location',
           {
-            locationAlwaysAndWhenInUsePermission: 'Allow DogWalk to use your location to track your walks.',
-            locationAlwaysPermission: 'Allow DogWalk to use your location even when the app is in the background to continue tracking your walk.',
-            locationWhenInUsePermission: 'Allow DogWalk to use your location to track your walks.',
+            locationAlwaysAndWhenInUsePermission,
+            locationAlwaysPermission,
+            locationWhenInUsePermission,
             isAndroidBackgroundLocationEnabled: true,
             isAndroidForegroundServiceEnabled: true,
           },
