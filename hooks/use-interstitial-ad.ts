@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+import { useTrackingTransparency } from '@/contexts/tracking-transparency-context';
 
 const isNativePlatform = Platform.OS === 'ios' || Platform.OS === 'android';
 
@@ -24,6 +25,7 @@ type UseInterstitialAdReturn = {
 };
 
 export function useInterstitialAd(): UseInterstitialAdReturn {
+  const { isReady } = useTrackingTransparency();
   const adRef = useRef<InterstitialAd | null>(null);
   const adUnitRef = useRef<string | undefined>(resolvedAdUnitId ?? undefined);
   const loadPromiseRef = useRef<Promise<boolean> | null>(null);
@@ -99,7 +101,8 @@ export function useInterstitialAd(): UseInterstitialAdReturn {
   }, [getOrCreateAd, resolvedAdUnitId]);
 
   useEffect(() => {
-    if (!isNativePlatform || !resolvedAdUnitId) {
+    // Wait for ATT permission request to complete before loading ads
+    if (!isNativePlatform || !resolvedAdUnitId || !isReady) {
       return;
     }
 
@@ -130,7 +133,7 @@ export function useInterstitialAd(): UseInterstitialAdReturn {
       isLoadedRef.current = false;
       isLoadingRef.current = false;
     };
-  }, [getOrCreateAd, loadAd, resolvedAdUnitId]);
+  }, [getOrCreateAd, loadAd, resolvedAdUnitId, isReady]);
 
   const showAd = useCallback(async () => {
     if (!isNativePlatform || !resolvedAdUnitId) {

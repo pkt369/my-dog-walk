@@ -85,6 +85,7 @@ export default ({ config }) => {
       },
       plugins: [
         'expo-localization',
+        'expo-tracking-transparency',
         'expo-router',
         [
           'expo-splash-screen',
