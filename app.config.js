@@ -103,7 +103,7 @@ export default ({ config }) => {
         [
           'react-native-google-mobile-ads',
           {
-            userTrackingUsageDescription: '맞춤 광고 제공을 위해 기기 식별자를 사용합니다.',
+            userTrackingUsageDescription: 'This identifier is used to deliver personalized ads to you.',
             iosAppId: 'ca-app-pub-9912842723450619~7600130981',
             androidAppId: 'ca-app-pub-9912842723450619~1091413015',
           },
